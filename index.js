@@ -1,112 +1,65 @@
+// == TELEGRAM BOT: Điều khiển máy tính từ xa ==
 const TelegramBot = require("node-telegram-bot-api");
 const { exec } = require("child_process");
 const fs = require("fs");
-const https = require("https");
-const path = require("path");
 const NodeWebcam = require("node-webcam");
+const path = require("path");
 
-const token =
-  process.env.TELEGRAM_BOT_TOKEN ||
-  "THAY TOKEN TELEGRAM CỦA BẠN VÀO ĐÂY";
-const OWNER_IDS = [ID , ID];  // Thay ID của bạn vào đây (có thể là nhiều ID)
-const STATE_FILE = "state.json";
-const WALLPAPER_DIR = path.join("D:", "maitrungluan", "wallpapers"); 
-const IMAGE_VIDEO_DIR = path.join("D:", "maitrungluan", "img_video");
-const NIRCMD_PATH = path.join("D:", "maitrungluan", "nircmd.exe");
+const token = process.env.TELEGRAM_BOT_TOKEN || "7161920088:AAHbueHOVCdNsBSa1Cs6HaLgN102vueMTFs";
+const OWNER_IDS = [6687413975, 111111]; // <-- sửa ID tại đây
+const WALLPAPER_DIR = "D:\\maitrungluan\\wallpapers";
+const IMAGE_VIDEO_DIR = "D:\\maitrungluan\\img_video";
+const NIRCMD_PATH = "D:\\maitrungluan\\nircmd.exe";
 
 const bot = new TelegramBot(token, { polling: true });
-
-if (!fs.existsSync(WALLPAPER_DIR)) fs.mkdirSync(WALLPAPER_DIR, { recursive: true });
-if (!fs.existsSync(IMAGE_VIDEO_DIR)) fs.mkdirSync(IMAGE_VIDEO_DIR, { recursive: true });
 
 let monitoring = false;
 let monitoringInterval = null;
 let pendingWallpaperChange = false;
+const COMMAND_COOLDOWN = 5 * 1000; // 5 giây
 let lastCommandTimes = {};
 
 if (!fs.existsSync(NIRCMD_PATH)) {
   console.warn("⚠️ Không tìm thấy nircmd.exe. Một số chức năng sẽ không hoạt động.");
 }
 
-// --- Load & Save State ---
-function loadState() {
-  try {
-    return JSON.parse(fs.readFileSync(STATE_FILE, "utf-8"));
-  } catch (e) {
-    return {};
-  }
-}
-function saveState(state) {
-  fs.writeFileSync(STATE_FILE, JSON.stringify(state), "utf-8");
-}
-let commandsExecuted = loadState();
-
 function sendLog(message) {
   OWNER_IDS.forEach((id) => bot.sendMessage(id, `📋 ${message}`));
-  fs.appendFileSync(
-    "bot_logs.txt",
-    `${new Date().toISOString()} - ${message}\n`
-  );
+  fs.appendFileSync("bot_logs.txt", `${new Date().toISOString()} - ${message}\n`);
 }
 
-function resetCommandState(command, delay = 1000) {
-  setTimeout(() => {
-    commandsExecuted[command] = false;
-    saveState(commandsExecuted);
-    sendLog(`⚙️ Lệnh ${command} đã sẵn sàng sử dụng lại`);
-  }, delay);
+function isRecentMessage(msg) {
+  const now = Date.now();
+  const msgDate = msg.date * 1000;
+  return (now - msgDate) <= COMMAND_COOLDOWN;
 }
 
-// --- Hỗ trợ tải ảnh ---
-function downloadImage(url, filepath, callback) {
-  const file = fs.createWriteStream(filepath);
-  https.get(url, (res) => {
-    res.pipe(file);
-    file.on("finish", () => {
-      file.close(callback);
-    });
-  });
+function isCoolingDown(command) {
+  const now = Date.now();
+  const last = lastCommandTimes[command] || 0;
+  return (now - last) < COMMAND_COOLDOWN;
 }
 
-// --- Giao diện lệnh ---
-bot.setMyCommands([
-  { command: "shutdown", description: "Tắt máy tính" },
-  { command: "restart", description: "Khởi động lại máy tính" },
-  { command: "lock", description: "Khóa máy tính" },
-  { command: "volume_up", description: "Tăng âm lượng" },
-  { command: "volume_down", description: "Giảm âm lượng" },
-  { command: "mute", description: "Tắt tiếng máy tính" },
-  { command: "screenshot", description: "Chụp ảnh màn hình" },
-  { command: "webcam", description: "Chụp ảnh từ webcam" },
-  { command: "record_video", description: "Quay video 60 giây" },
-  { command: "borrow_mode", description: "Bật theo dõi mượn máy" },
-  { command: "stop_borrow_mode", description: "Tắt theo dõi mượn máy" },
-  { command: "set_wallpaper", description: "Đặt ảnh nền từ ảnh gửi lên" },
-  { command: "status", description: "Kiểm tra trạng thái" },
-]);
+function markCommandExecuted(command) {
+  lastCommandTimes[command] = Date.now();
+}
 
-// --- Giám sát mượn máy ---
 function startMonitoring() {
   if (monitoring) return;
   monitoring = true;
   sendLog("🚨 Bật theo dõi mượn máy");
-  bot.sendMessage(OWNER_IDS[0], "🔒 Đã bật chế độ theo dõi mượn máy");
 
   monitoringInterval = setInterval(() => {
     exec("tasklist", (err, stdout) => {
       if (stdout.toLowerCase().includes("chrome.exe")) {
         sendLog("⚠️ Phát hiện mở Chrome!");
       }
-      if (
-        stdout.toLowerCase().includes("cmd.exe") ||
-        stdout.toLowerCase().includes("taskmgr.exe")
-      ) {
+      if (stdout.toLowerCase().includes("cmd.exe") || stdout.toLowerCase().includes("taskmgr.exe")) {
         sendLog("⚠️ Có dấu hiệu sử dụng cmd hoặc Task Manager");
       }
     });
 
-    const watchPath = path.join("D:", "download");
-    fs.readdir(watchPath, (err, files) => {
+    fs.readdir("D:\\download", (err, files) => {
       if (!err && files.length > 0) {
         sendLog(`📁 Truy cập D:\\download (${files.length} file)`);
       }
@@ -118,11 +71,9 @@ function stopMonitoring() {
   if (!monitoring) return;
   clearInterval(monitoringInterval);
   monitoring = false;
-  bot.sendMessage(OWNER_IDS[0], "🔓 Đã tắt chế độ theo dõi mượn máy");
   sendLog("🛑 Tắt theo dõi mượn máy");
 }
 
-// --- Thay ảnh nền ---
 function changeWallpaper(imagePath) {
   exec(
     `reg add "HKCU\\Control Panel\\Desktop" /v Wallpaper /t REG_SZ /d "${imagePath}" /f && RUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters`,
@@ -133,113 +84,70 @@ function changeWallpaper(imagePath) {
   );
 }
 
-// --- Xử lý tin nhắn ---
 bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
-
+  const text = msg.text;
   if (!OWNER_IDS.includes(chatId)) return bot.sendMessage(chatId, "⛔ Không có quyền!");
-  if (msg.date && Math.abs(Date.now() / 1000 - msg.date) > 5) return;
+  if (!isRecentMessage(msg)) return bot.sendMessage(chatId, "⛔ Lệnh quá cũ, vui lòng gửi lại!");
+
+  const screenshotPath = path.join(IMAGE_VIDEO_DIR, "screenshot.png");
+  const webcamPath = path.join(IMAGE_VIDEO_DIR, "webcam.jpg");
 
   if (pendingWallpaperChange) {
     if (msg.photo && msg.photo.length > 0) {
       const photoId = msg.photo[msg.photo.length - 1].file_id;
-      try {
-        const fileUrl = await bot.getFileLink(photoId);
-        const savePath = path.join(WALLPAPER_DIR, `wallpaper_${Date.now()}.jpg`);
-        downloadImage(fileUrl, savePath, () => {
-          changeWallpaper(savePath);
-          pendingWallpaperChange = false;
-        });
-      } catch (e) {
+      bot.downloadFile(photoId, WALLPAPER_DIR).then((downloadedPath) => {
+        changeWallpaper(downloadedPath);
+        pendingWallpaperChange = false;
+      }).catch(() => {
         bot.sendMessage(chatId, "❌ Không thể tải ảnh");
         pendingWallpaperChange = false;
-      }
+      });
     } else {
       bot.sendMessage(chatId, "❌ Vui lòng gửi ảnh!");
     }
     return;
   }
 
-  const text = msg.text;
-  const screenshotPath = path.join(IMAGE_VIDEO_DIR, "screenshot.png");
-  const webcamPath = path.join(IMAGE_VIDEO_DIR, "webcam.jpg");
-
   switch (text) {
-    case "/status":
-      bot.sendMessage(chatId, "✅ Máy đang hoạt động!");
-      break;
-
     case "/shutdown":
-      if (!commandsExecuted.shutdown) {
-        commandsExecuted.shutdown = true;
-        saveState(commandsExecuted);
-        bot.sendMessage(chatId, "💀 Đang tắt máy...");
-        exec("shutdown /s /f /t 0");
-      } else {
-        bot.sendMessage(chatId, "⛔ Lệnh shutdown đã thực hiện trước đó!");
-      }
+      if (isCoolingDown("shutdown")) return bot.sendMessage(chatId, "⛔ Đã gửi gần đây!");
+      markCommandExecuted("shutdown");
+      bot.sendMessage(chatId, "💀 Đang tắt máy...");
+      exec("shutdown /s /f /t 0");
       break;
 
     case "/restart":
-      if (!commandsExecuted.restart) {
-        commandsExecuted.restart = true;
-        saveState(commandsExecuted);
-        bot.sendMessage(chatId, "🔄 Đang khởi động lại...");
-        exec("shutdown /r /f /t 0");
-      } else {
-        bot.sendMessage(chatId, "⛔ Lệnh restart đã thực hiện trước đó!");
-      }
+      if (isCoolingDown("restart")) return bot.sendMessage(chatId, "⛔ Đã gửi gần đây!");
+      markCommandExecuted("restart");
+      bot.sendMessage(chatId, "🔄 Đang khởi động lại...");
+      exec("shutdown /r /f /t 0");
       break;
 
     case "/lock":
-      if (!commandsExecuted.lock) {
-        commandsExecuted.lock = true;
-        saveState(commandsExecuted);
-        bot.sendMessage(chatId, "🔒 Đang khóa máy...");
-        exec("rundll32.exe user32.dll,LockWorkStation");
-        resetCommandState("lock", 4000);
-      } else {
-        bot.sendMessage(chatId, "⛔ Lệnh lock đã thực hiện trước đó!");
-      }
+      if (isCoolingDown("lock")) return bot.sendMessage(chatId, "⛔ Đã gửi gần đây!");
+      markCommandExecuted("lock");
+      exec("rundll32.exe user32.dll,LockWorkStation");
+      bot.sendMessage(chatId, "🔒 Đã khóa máy");
       break;
 
     case "/screenshot":
-      if (!commandsExecuted.screenshot && fs.existsSync(NIRCMD_PATH)) {
-        bot.sendMessage(chatId, "📸 Đang chụp màn hình...");
-        exec(`${NIRCMD_PATH} savescreenshot "${screenshotPath}"`, () => {
-          bot.sendPhoto(chatId, screenshotPath);
-          commandsExecuted.screenshot = true;
-          saveState(commandsExecuted);
-          resetCommandState("screenshot", 4000);
-        });
-      } else {
-        bot.sendMessage(chatId, "⛔ Không thể chụp màn hình hoặc đã thực hiện trước đó!");
-      }
+      if (isCoolingDown("screenshot")) return bot.sendMessage(chatId, "⛔ Gần đây đã chụp!");
+      markCommandExecuted("screenshot");
+      if (!fs.existsSync(NIRCMD_PATH)) return bot.sendMessage(chatId, "❌ Không có nircmd.exe!");
+      exec(`${NIRCMD_PATH} savescreenshot "${screenshotPath}"`, () => {
+        bot.sendPhoto(chatId, screenshotPath);
+      });
       break;
 
     case "/webcam":
-      if (!commandsExecuted.webcam) {
-        bot.sendMessage(chatId, "📷 Đang mở webcam...");
-        const Webcam = NodeWebcam.create({
-          width: 1280,
-          height: 720,
-          quality: 100,
-          output: "jpeg",
-          callbackReturn: "location",
-        });
-        Webcam.capture(webcamPath, (err, data) => {
-          if (err) {
-            bot.sendMessage(chatId, "❌ Không thể chụp ảnh webcam");
-            return;
-          }
-          bot.sendPhoto(chatId, data);
-          commandsExecuted.webcam = true;
-          saveState(commandsExecuted);
-          resetCommandState("webcam", 4000);
-        });
-      } else {
-        bot.sendMessage(chatId, "⛔ Lệnh webcam đã thực hiện trước đó!");
-      }
+      if (isCoolingDown("webcam")) return bot.sendMessage(chatId, "⛔ Đã dùng gần đây!");
+      markCommandExecuted("webcam");
+      const Webcam = NodeWebcam.create({ width: 1280, height: 720, quality: 100, output: "jpeg", callbackReturn: "location" });
+      Webcam.capture(webcamPath, (err, data) => {
+        if (err) return bot.sendMessage(chatId, "❌ Không thể chụp ảnh webcam");
+        bot.sendPhoto(chatId, data);
+      });
       break;
 
     case "/volume_up":
@@ -257,65 +165,41 @@ bot.on("message", async (msg) => {
       bot.sendMessage(chatId, "🔇 Đã tắt tiếng");
       break;
 
+    case "/record_video":
+      if (isCoolingDown("record_video")) return bot.sendMessage(chatId, "⛔ Đã quay gần đây!");
+      markCommandExecuted("record_video");
+      const videoPath = path.join(IMAGE_VIDEO_DIR, `video_${Date.now()}.mp4`);
+      bot.sendMessage(chatId, "🎥 Đang quay video 60s...");
+      exec(`ffmpeg -f dshow -i video=\"Integrated Camera\" -t 60 -y \"${videoPath}\"`, (err) => {
+        if (err) return bot.sendMessage(chatId, "❌ Không quay được video");
+        bot.sendVideo(chatId, videoPath);
+      });
+      break;
+
     case "/borrow_mode":
-      if (!commandsExecuted.borrow_mode) {
-        startMonitoring();
-        commandsExecuted.borrow_mode = true;
-        saveState(commandsExecuted);
-        resetCommandState("borrow_mode");
-      } else {
-        bot.sendMessage(chatId, "⛔ Chế độ theo dõi đã bật!");
-      }
+      if (isCoolingDown("borrow_mode")) return bot.sendMessage(chatId, "⛔ Gần đây đã bật!");
+      markCommandExecuted("borrow_mode");
+      startMonitoring();
+      bot.sendMessage(chatId, "📡 Bật theo dõi");
       break;
 
     case "/stop_borrow_mode":
-      if (!commandsExecuted.stop_borrow_mode) {
-        stopMonitoring();
-        commandsExecuted.stop_borrow_mode = true;
-        saveState(commandsExecuted);
-        resetCommandState("stop_borrow_mode");
-      } else {
-        bot.sendMessage(chatId, "⛔ Chế độ theo dõi đã tắt!");
-      }
+      if (isCoolingDown("stop_borrow_mode")) return bot.sendMessage(chatId, "⛔ Gần đây đã tắt!");
+      markCommandExecuted("stop_borrow_mode");
+      stopMonitoring();
+      bot.sendMessage(chatId, "🛑 Đã tắt theo dõi");
       break;
 
     case "/set_wallpaper":
       pendingWallpaperChange = true;
-      bot.sendMessage(chatId, "🖼️ Gửi ảnh bạn muốn đặt làm nền trong vòng 10s!");
+      bot.sendMessage(chatId, "🖼️ Gửi ảnh để đổi hình nền trong 10s");
       break;
 
-    case "/record_video":
-      if (!commandsExecuted.record_video) {
-        commandsExecuted.record_video = true;
-        saveState(commandsExecuted);
-
-        const videoPath = path.join(
-          IMAGE_VIDEO_DIR,
-          `video_${Date.now()}.mp4`
-        );
-
-        bot.sendMessage(chatId, "🎥 Đang quay video webcam trong 60 giây...");
-
-        const cameraName = "Integrated Camera"; // <-- Cần thay bằng tên thiết bị nếu khác
-        const cmd = `ffmpeg -f dshow -i video="${cameraName}" -t 60 -y "${videoPath}"`;
-
-        exec(cmd, (err, stdout, stderr) => {
-          if (err) {
-            bot.sendMessage(chatId, "❌ Lỗi khi quay video hoặc không nhận diện được webcam.");
-            console.error(stderr);
-          } else {
-            bot.sendVideo(chatId, videoPath);
-            sendLog("📹 Đã quay xong video webcam và gửi về Telegram");
-          }
-          commandsExecuted.record_video = false;
-          saveState(commandsExecuted);
-        });
-      } else {
-        bot.sendMessage(chatId, "⛔ Đang quay hoặc đã thực hiện trước đó!");
-      }
+    case "/status":
+      bot.sendMessage(chatId, "✅ Máy đang hoạt động!");
       break;
 
     default:
-      bot.sendMessage(chatId, "❓ Lệnh không hợp lệ hoặc đã xử lý gần đây.");
+      bot.sendMessage(chatId, "❓ Lệnh không hợp lệ hoặc đã xử lý trước đó.");
   }
 });
