@@ -1,0 +1,28 @@
+2025-04-30T06:17:31.532Z - ⚙️ Lệnh screenshot đã sẵn sàng sử dụng lại
+2025-04-30T06:17:43.529Z - ⚙️ Lệnh webcam đã sẵn sàng sử dụng lại
+2025-04-30T06:21:54.479Z - ⚙️ Lệnh lock đã sẵn sàng sử dụng lại
+2025-04-30T06:22:12.676Z - 🚨 Bật theo dõi mượn máy
+2025-04-30T06:22:13.680Z - ⚙️ Lệnh borrow_mode đã sẵn sàng sử dụng lại
+2025-04-30T06:22:17.689Z - 📁 Truy cập D:\download (68 file)
+2025-04-30T06:22:17.936Z - ⚠️ Phát hiện mở Chrome!
+2025-04-30T06:22:17.937Z - ⚠️ Có dấu hiệu sử dụng cmd hoặc Task Manager
+2025-04-30T06:22:22.681Z - 📁 Truy cập D:\download (68 file)
+2025-04-30T06:22:22.893Z - ⚠️ Phát hiện mở Chrome!
+2025-04-30T06:22:22.894Z - ⚠️ Có dấu hiệu sử dụng cmd hoặc Task Manager
+2025-04-30T06:22:27.683Z - 📁 Truy cập D:\download (68 file)
+2025-04-30T06:22:27.847Z - ⚠️ Phát hiện mở Chrome!
+2025-04-30T06:22:27.847Z - ⚠️ Có dấu hiệu sử dụng cmd hoặc Task Manager
+2025-04-30T06:22:32.684Z - 📁 Truy cập D:\download (68 file)
+2025-04-30T06:22:32.846Z - ⚠️ Phát hiện mở Chrome!
+2025-04-30T06:22:32.846Z - ⚠️ Có dấu hiệu sử dụng cmd hoặc Task Manager
+2025-04-30T06:22:37.684Z - 📁 Truy cập D:\download (68 file)
+2025-04-30T06:22:37.851Z - ⚠️ Phát hiện mở Chrome!
+2025-04-30T06:22:37.851Z - ⚠️ Có dấu hiệu sử dụng cmd hoặc Task Manager
+2025-04-30T06:22:42.687Z - 📁 Truy cập D:\download (68 file)
+2025-04-30T06:22:42.709Z - 🛑 Tắt theo dõi mượn máy
+2025-04-30T06:22:42.861Z - ⚠️ Phát hiện mở Chrome!
+2025-04-30T06:22:42.862Z - ⚠️ Có dấu hiệu sử dụng cmd hoặc Task Manager
+2025-04-30T06:22:43.710Z - ⚙️ Lệnh stop_borrow_mode đã sẵn sàng sử dụng lại
+2025-04-30T06:27:36.337Z - ⚙️ Lệnh screenshot đã sẵn sàng sử dụng lại
+2025-04-30T06:38:08.479Z - ⚙️ Lệnh screenshot đã sẵn sàng sử dụng lại
+2025-04-30T06:38:18.880Z - ⚙️ Lệnh webcam đã sẵn sàng sử dụng lại

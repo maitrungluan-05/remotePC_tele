@@ -1,0 +1,17 @@
+{
+  "name": "maitrungluan",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.66.0",
+    "node-webcam": "^0.8.2",
+    "screenshot-desktop": "^1.15.1"
+  }
+}
