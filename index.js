@@ -5,8 +5,8 @@ const fs = require("fs");
 const NodeWebcam = require("node-webcam");
 const path = require("path");
 
-const token = process.env.TELEGRAM_BOT_TOKEN || "7161920088:AAHbueHOVCdNsBSa1Cs6HaLgN102vueMTFs";
-const OWNER_IDS = [6687413975, 111111]; // <-- sửa ID tại đây
+const token = process.env.TELEGRAM_BOT_TOKEN || "TOKEN BOT TELE";
+const OWNER_IDS = [ID]; // <-- sửa ID tại đây
 const WALLPAPER_DIR = "D:\\maitrungluan\\wallpapers";
 const IMAGE_VIDEO_DIR = "D:\\maitrungluan\\img_video";
 const NIRCMD_PATH = "D:\\maitrungluan\\nircmd.exe";
